@@ -40,7 +40,11 @@ def flat_facts(ex: Extraction) -> list[dict]:
 def pricing_badge(ex: Extraction) -> str:
     if not ex.pricing:
         return ""
-    paid = [t.price for t in ex.pricing if re.search(r"\d", t.price)]
+    def amount(price: str) -> float:
+        m = re.search(r"\d[\d,]*\.?\d*", price)
+        return float(m.group().replace(",", "")) if m else float("inf")
+
+    paid = sorted((t.price for t in ex.pricing if re.search(r"/\s*(mo|month|yr|year)|per\s+(month|year)|monthly|annual", t.price, re.I) and re.search(r"[$€£]\s*0*[1-9]|\b[1-9][\d,.]*\s*(usd|eur|gbp)\b", t.price, re.I)), key=amount)  # cheapest first
     parts = []
     if ex.free_trial:
         parts.append("Free trial")

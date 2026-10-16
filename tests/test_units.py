@@ -169,3 +169,29 @@ def test_lenient_parse_keeps_good_items_and_drops_malformed():
                       "features": [ev("Assign chats to team members", name="Assign", description=""), "oops"]})
     ex = parse_lenient(raw)
     assert ex.name and len(ex.features) == 1 and ex.target_audience == []
+
+
+def test_pricing_binds_name_to_price_across_lines():
+    page = "Pricing\n\nHobby\n\nGreat for side projects.\n\n$16\n/month\n\nStandard\n\n$83\n/month"
+    ex = Extraction.model_validate({"pricing": [
+        {"source_url": URL, "quote": "$16 /month", "name": "Hobby", "price": "$16/month"},
+        {"source_url": URL, "quote": "$16 /month", "name": "Standard", "price": "$16/month"},   # wrong plan for that price
+        {"source_url": URL, "quote": "$83 /month", "name": "Enterprise", "price": "$83/month"}]})  # plan not on page
+    kept, problems = ground(ex, {URL: page})
+    assert [(t.name, t.price) for t in kept.pricing] == [("Hobby", "$16/month")]
+
+
+def test_price_vote_answer_parsing():
+    from botshub_agent.enrich.pricevote import extract_answer, matches
+    assert extract_answer("thinking...\n**Answer:** $16 /month") == "$16/month"
+    assert extract_answer("no marker") == "nomarker"  # harmless: never equals a price
+    assert matches("$16/month(billedyearly)", "$16 /month") and not matches("$160/month", "$16/month")
+    assert not matches("none", "$16")
+
+
+def test_price_vote_parsing_fallbacks():
+    from botshub_agent.enrich.pricevote import extract_answer
+    assert extract_answer('{"price":"$83/month"}') == "$83/month"
+    assert extract_answer("```json\n{\"price\": \"Free\"}\n```") == "free"
+    assert extract_answer("Standard costs\n$83 /month") == "$83/month"
+    assert extract_answer("I cannot determine this from the pages, because " + "x" * 80) == "none"

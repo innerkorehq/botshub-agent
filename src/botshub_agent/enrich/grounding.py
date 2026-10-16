@@ -50,9 +50,10 @@ class Grounder:
     def __init__(self, pages: dict[str, str]) -> None:
         self.pages = {_url(u): norm(t) for u, t in pages.items()}
 
-    def check(self, ev: Evidence, value: str | None = None, thr: float = 0.6, strict: bool = False) -> str | None:
+    def check(self, ev: Evidence, value: str | None = None, thr: float = 0.6, strict: bool = False,
+              min_quote: int = MIN_QUOTE) -> str | None:
         q = norm(ev.quote)
-        if len(q) < MIN_QUOTE:
+        if len(q) < min_quote:
             return f"quote too short ({ev.quote!r}); copy a full sentence or phrase"
         text = self.pages.get(_url(ev.source_url))
         if text is None:
@@ -60,7 +61,7 @@ class Grounder:
         if q not in text:
             return f"quote not found verbatim on {ev.source_url}: {ev.quote[:80]!r}"
         if value is not None:
-            ok = norm(value) in q if strict else supported(value, ev.quote, thr)
+            ok = norm(value).replace(" ", "") in q.replace(" ", "") if strict else supported(value, ev.quote, thr)
             if not ok:
                 return f"value {value[:60]!r} is not supported by its quote"
         return None
@@ -93,8 +94,9 @@ def ground(ex: Extraction, pages: dict[str, str]) -> tuple[Extraction, list[str]
     out.features = [f for f in ex.features if keep(f"feature {f.name!r}", f, f"{f.name} {f.description}", thr=0.5)]
     out.use_cases = [u for u in ex.use_cases if keep(f"use case {u.title!r}", u, u.title, thr=0.5)]
     out.integrations = [i for i in ex.integrations if keep(f"integration {i.name!r}", i, i.name, strict=True)]
-    out.pricing = [t for t in ex.pricing if keep(f"pricing {t.name!r}", t, t.price, strict=True)
-                   and keep(f"pricing {t.name!r} name", t, t.name, thr=0.5)]
+    # The price must be in its quote and the plan name must precede it on the page (see _name_near_price).
+    out.pricing = [t for t in ex.pricing if keep(f"pricing {t.name!r}", t, t.price, strict=True, min_quote=2)
+                   and _name_near_price(g, t, problems)]
     out.deployment = [d for d in ex.deployment if keep("deployment", d, d.value, thr=0.5)]
     out.target_audience = [d for d in ex.target_audience if keep("audience", d, d.value, thr=0.5)]
     return out, problems
@@ -114,6 +116,22 @@ def canonicalize_sources(ex: Extraction, pages: dict[str, str]) -> Extraction:
     for fld in Extraction.model_fields:
         fix(getattr(ex, fld))
     return ex
+
+
+def _name_near_price(g: Grounder, t, problems: list[str], window: int = 400) -> bool:
+    """Pricing tables put plan name and price on different lines, so no single quote spans both.
+    Bind them deterministically instead: the name must occur on the page shortly BEFORE the price."""
+    text = (g.pages.get(_url(t.source_url)) or "")
+    flat, price, name = text.replace(" ", ""), norm(t.price).replace(" ", ""), norm(t.name).replace(" ", "")
+    if price in ("", "custom", "free", "contactsales") and name in flat:
+        return True  # non-numeric tiers: the name on the page is all there is to check
+    i = flat.find(name)
+    while i != -1:
+        if price in flat[i : i + len(name) + window]:
+            return True
+        i = flat.find(name, i + 1)
+    problems.append(f"pricing {t.name!r}: price {t.price!r} does not appear within {window} characters after the plan name on {t.source_url}")
+    return False
 
 
 def parse_extraction(candidate: str) -> Extraction:
@@ -166,7 +184,7 @@ def make_validator(get_pages):
         shown = "; ".join(problems[:8]) + (f" (+{len(problems) - 8} more)" if len(problems) > 8 else "")
         return Verdict(
             ok=False,
-            feedback="Remove or fix every unsupported claim. Never guess; use null/[] when the pages do not say it. "
+            feedback="Remove or fix every unsupported claim. Never guess; use null/[] when the pages do not say it. Each quote must be ONE short contiguous snippet copied exactly (never stitch lines together or skip text between them). "
             f"Problems: {shown}",
         )
 

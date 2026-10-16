@@ -149,6 +149,11 @@ async def enrich_candidate(rt, cid: int, force: bool = False) -> dict:
         slug = f"{slug}-{cid}"
     listing = assemble.build_listing(c, slug, ex, overview_text, media, ex.category or c.get("category"))
     decision, reasons, q = assemble.decide(listing, s.min_features, s.min_quality)
+    if decision == "held" and existing and existing["status"] == "published":
+        # A weaker re-run (LLM outage, thin page) must never replace a good live listing.
+        repo.log_decision(cid, "kept_previous", reasons + notes, q)
+        repo.set_candidate(cid, status="published")
+        return {"candidate": cid, "slug": existing["slug"], "decision": "kept_previous", "reasons": reasons, "quality": q}
     repo.save_agent(cid, slug, listing, q, decision, facts, media)
     repo.log_decision(cid, decision, reasons + notes, q)
     repo.set_candidate(cid, status=decision, last_enriched=_now())

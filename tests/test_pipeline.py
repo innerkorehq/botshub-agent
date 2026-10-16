@@ -83,3 +83,23 @@ async def test_enrich_publishes_only_grounded_facts(tmp_path):
                 assert f["quote"].lower().rstrip(".") in pages[f["source_url"]]
         # Unchanged sources => no re-extraction
         assert (await enrich_candidate(rt, cid))["decision"] == "unchanged"
+
+
+async def test_weaker_rerun_never_replaces_a_published_listing(tmp_path):
+    mode = {"broken": False}
+
+    def flaky(req):
+        return text("not json at all") if mode["broken"] else llm(req)
+
+    s = Settings(data_dir=tmp_path, min_features=3, min_quality=0.5)
+    fetcher = RawFetcher(FetchPolicy(), resolver=resolver, transport=httpx.MockTransport(web))
+    async with runtime(s, llm_client=FakeLLMClient(flaky), fetcher=fetcher) as rt:
+        ingest_signals(rt.repo, [[{"source": "searxng", "url": "https://zorbo.ai", "name": "Zorbo", "metrics": {}}]])
+        cid = rt.repo.candidates()[0]["id"]
+        assert (await enrich_candidate(rt, cid))["decision"] == "published"
+        before = rt.repo.agent_by_candidate(cid)["listing"]
+        mode["broken"] = True
+        res = await enrich_candidate(rt, cid, force=True)
+        assert res["decision"] == "kept_previous"
+        assert rt.repo.agent_by_candidate(cid)["listing"] == before
+        assert rt.repo.agent_by_candidate(cid)["status"] == "published"
