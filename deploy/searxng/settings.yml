@@ -1,0 +1,6 @@
+use_default_settings: true
+server:
+  secret_key: "change-me-before-exposing"
+  limiter: false
+search:
+  formats: [html, json]   # the agent needs format=json

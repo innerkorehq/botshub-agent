@@ -1,0 +1,5 @@
+services:
+  searxng:
+    image: searxng/searxng:latest
+    ports: ["8888:8080"]
+    volumes: ["./deploy/searxng/settings.yml:/etc/searxng/settings.yml:ro"]

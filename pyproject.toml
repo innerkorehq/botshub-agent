@@ -1,0 +1,33 @@
+[project]
+name = "botshub-agent"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Gagandeep Singh Makhija", email = "gagandeep.2020@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "autonomous-agent-architecture[sqlitevec]>=0.3.1",
+    "beautifulsoup4>=4.15.0",
+    "httpx>=0.28.1",
+    "pydantic>=2.14.1",
+    "rapidfuzz>=3.14.6",
+]
+
+[build-system]
+requires = ["uv_build>=0.12.21,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]
+
+[project.scripts]
+botshub = "botshub_agent.main:cli"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
