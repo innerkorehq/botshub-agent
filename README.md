@@ -29,6 +29,11 @@ uv run pytest
 
 Data: `data/botshub.db` (our tables), `data/aaa_events.db` (AAA event log; **one engine process per file**).
 
+## Local models (Apple silicon)
+`uv sync --extra local`, then set `BOTSHUB_CRITIC_MODEL` / `BOTSHUB_EMBED_MODEL` to HF ids starting with `mlx-community/`
+(see `.env.example`). Those ids run in-process via MLX (`src/botshub_agent/local.py`); every other model id still goes to
+the OpenAI-compatible gateway. Local models cannot do tool calling, so keep the main `BOTSHUB_LLM_MODEL` on the gateway.
+
 ## Added in this pass
 - **sqlite-vec tie-break** (`discovery/semantic.py`): set `BOTSHUB_EMBED_MODEL` (+ `BOTSHUB_EMBED_DIM`). Merges a repo and a site only if cosine >= `BOTSHUB_SEMANTIC_THRESHOLD` (0.90) AND normalised names match AND kinds differ. Logged in `merges`.
 - **Gap-filler** (`enrich/gapfill.py`, `tools/research.py`): bounded `ToolLoop` (6 turns) runs only when pricing is missing or features < minimum. Its tools can read only the candidate's own site / GitHub repo (allow-list comes from our DB, not the model). It stores pages; facts still pass grounding.

@@ -20,7 +20,10 @@ class Settings:
     llm_api_key: str = os.environ.get("BOTSHUB_LLM_API_KEY", "")
     llm_model: str = os.environ.get("BOTSHUB_LLM_MODEL", "gpt-4o-mini")
     embed_model: str = os.environ.get("BOTSHUB_EMBED_MODEL", "")  # empty = semantic merge disabled
-    embed_dim: int = int(os.environ.get("BOTSHUB_EMBED_DIM", 1536))
+    embed_dim: int = int(os.environ.get("BOTSHUB_EMBED_DIM", 0))  # 0 = detect by probing the model
+    local_prefixes: tuple[str, ...] = tuple(
+        os.environ.get("BOTSHUB_LOCAL_PREFIXES", "mlx-community/").split(",")
+    )  # model ids starting with these run in-process on MLX
     semantic_threshold: float = _f("BOTSHUB_SEMANTIC_THRESHOLD", 0.90)
     price_votes: int = int(os.environ.get("BOTSHUB_PRICE_VOTES", 3))
     critic_model: str = os.environ.get("BOTSHUB_CRITIC_MODEL", "")  # empty = same model

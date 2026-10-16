@@ -29,18 +29,24 @@ async def semantic_merge(rt) -> dict:
     s, repo = rt.settings, rt.repo
     if not s.embed_model:
         return {"skipped": "BOTSHUB_EMBED_MODEL not set"}
-    store = SqliteVecStore(str(s.data_dir / "vectors.db"), dimension=s.embed_dim)
-    index = EmbeddingIndex(store, LLMEmbedder(rt.llm, s.embed_model), namespace="candidates")
+    embedder = LLMEmbedder(rt.llm, s.embed_model)
+    try:
+        dim = s.embed_dim or len((await embedder.embed(["dimension probe"]))[0])
+    except Exception as e:
+        log.warning("embedding model unavailable: %s: %s", type(e).__name__, e)
+        return {"error": f"{type(e).__name__}: {e}", "merged": 0}
+    store = SqliteVecStore(str(s.data_dir / f"vectors-{dim}.db"), dimension=dim)  # file per dimension: models can change
+    index = EmbeddingIndex(store, embedder, namespace="candidates")
     merged = embedded = 0
     try:
         cands = repo.candidates("status != 'rejected'")
         with repo.conn() as c:
             done = {r["candidate_id"]: r["text_hash"] for r in c.execute("SELECT * FROM embedded")}
-        fresh = [c for c in cands if done.get(c["id"]) != sha(_text(c))]
+        fresh = [c for c in cands if done.get(c["id"]) != sha(_text(c) + s.embed_model)]
         if fresh:
             await index.upsert([Doc(id=str(c["id"]), text=_text(c), meta={"kind": c["key"].split(":")[0]}) for c in fresh])
             with repo.conn() as c:
-                c.executemany("INSERT OR REPLACE INTO embedded VALUES (?,?)", [(f["id"], sha(_text(f))) for f in fresh])
+                c.executemany("INSERT OR REPLACE INTO embedded VALUES (?,?)", [(f["id"], sha(_text(f) + s.embed_model)) for f in fresh])
             embedded = len(fresh)
         gone: set[int] = set()
         for c in fresh:

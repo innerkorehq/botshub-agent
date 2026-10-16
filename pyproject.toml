@@ -28,6 +28,12 @@ dev = [
 [project.scripts]
 botshub = "botshub_agent.main:cli"
 
+[project.optional-dependencies]
+local = [
+    "mlx-embeddings>=0.1.0",
+    "mlx-lm>=0.32.2",
+]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]

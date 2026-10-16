@@ -17,6 +17,7 @@ from botshub_agent.config import Settings
 from botshub_agent.db.repo import Repo
 from botshub_agent.discovery.classify import validator as classify_validator
 from botshub_agent.enrich.grounding import make_validator
+from botshub_agent.local import LocalClient, RoutingClient, is_local
 from botshub_agent.models import Classification
 from botshub_agent.tools.fetch_html import RawFetcher, make_fetch_tool
 from botshub_agent.tools.github_meta import make_github_readme_tool
@@ -81,6 +82,8 @@ async def runtime(s: Settings | None = None, llm_client=None, fetcher: RawFetche
         return {p["url"]: p["text"] for p in repo.pages(cid)} if cid else {}
 
     client = llm_client or build_client(llm_config(s))
+    if any(is_local(m, s.local_prefixes) for m in (s.critic_model, s.embed_model, s.llm_model)):
+        client = RoutingClient(client, LocalClient(), s.local_prefixes)
     async with Engine(store=store) as engine:
         LLMHandler(client).attach(engine)
         ToolHandler(registry, pools={"default": 16, "github": 2, "hn": 2, "searxng": 2, "fetch": 6, "db": 1}).attach(engine)
