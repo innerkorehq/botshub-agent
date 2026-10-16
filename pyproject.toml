@@ -33,6 +33,9 @@ local = [
     "mlx-embeddings>=0.1.0",
     "mlx-lm>=0.32.2",
 ]
+docs = [
+    "mkdocs-material>=9.7.7",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

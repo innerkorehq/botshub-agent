@@ -170,6 +170,7 @@ def parse_lenient(candidate: str) -> Extraction:
     return Extraction.model_validate(out)
 
 
+# --8<-- [start:make_validator]
 def make_validator(get_pages):
     """get_pages(context) -> {url: text}. Registered on ValidationHandler as 'facts'."""
 
@@ -189,3 +190,4 @@ def make_validator(get_pages):
         )
 
     return validate
+# --8<-- [end:make_validator]

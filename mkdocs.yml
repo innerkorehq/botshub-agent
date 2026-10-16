@@ -1,0 +1,76 @@
+site_name: BotsHub Agent
+site_description: "An autonomous agent for botshub.com that finds trending AI agents and builds evidence-grounded listings. Built on the Autonomous Agent Architecture (AAA) library."
+site_url: https://innerkorehq.github.io/botshub-agent/
+repo_url: https://github.com/innerkorehq/botshub-agent
+repo_name: innerkorehq/botshub-agent
+edit_uri: edit/master/docs/
+copyright: Copyright &copy; 2026 Innerkore Technologies &middot; Built on <a href="https://innerkorehq.github.io/AutonomousAgentArchitecture/">AAA</a>
+
+theme:
+  name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle: {icon: material/weather-night, name: Switch to dark mode}
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle: {icon: material/weather-sunny, name: Switch to light mode}
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/innerkorehq/AutonomousAgentArchitecture
+      name: AAA on GitHub
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc: {permalink: true}
+  - pymdownx.details
+  - pymdownx.highlight: {anchor_linenums: true}
+  - pymdownx.inlinehilite
+  - pymdownx.snippets: {base_path: ["."], check_paths: true}
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed: {alternate_style: true}
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Using AAA:
+      - Why AAA, and the 5-step pattern: aaa/index.md
+      - Choosing algorithms: aaa/algorithms.md
+      - Patterns we used: aaa/patterns.md
+      - Lessons from a live run: aaa/lessons.md
+  - The agent:
+      - Overview: agent/overview.md
+      - Discovery: agent/discovery.md
+      - Enrichment and grounding: agent/enrichment.md
+      - Data and export format: agent/data.md
+  - Run it:
+      - Quickstart: run/quickstart.md
+      - Configuration: run/configuration.md
+      - Local models (MLX): run/local-models.md
+      - Testing: run/testing.md
+  - About:
+      - Status and known gaps: about/gaps.md

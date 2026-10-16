@@ -1,6 +1,9 @@
 # botshub-agent
 
-Autonomous agent for botshub.com, built on [AAA](https://innerkorehq.github.io/AutonomousAgentArchitecture/).
+Autonomous agent for botshub.com, built on [AAA](https://innerkorehq.github.io/AutonomousAgentArchitecture/) (Autonomous Agent Architecture).
+
+**Documentation: https://innerkorehq.github.io/botshub-agent/** · [Using AAA](https://innerkorehq.github.io/botshub-agent/aaa/) · [AAA docs](https://innerkorehq.github.io/AutonomousAgentArchitecture/) · [AAA on GitHub](https://github.com/innerkorehq/AutonomousAgentArchitecture)
+
 Finds trending AI agents (GitHub, Hacker News, SearXNG), builds listings **only from facts it fetched**
 (every claim stored with a verbatim quote from a page we downloaded), stores everything in SQLite and
 exports JSON per agent.

@@ -109,6 +109,7 @@ class LocalClient:
         self.backend.close()
 
 
+# --8<-- [start:routing]
 class RoutingClient:
     """Local models for ids matching `prefixes`; the gateway for the rest."""
 
@@ -127,3 +128,4 @@ class RoutingClient:
     async def aclose(self) -> None:
         await self.remote.aclose()
         await self.local.aclose()
+# --8<-- [end:routing]
