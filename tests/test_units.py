@@ -160,3 +160,12 @@ def test_repo_versions_and_export_removes_unpublished(tmp_path):
         assert c.execute("SELECT COUNT(*) FROM listing_versions").fetchone()[0] == 1
     repo.unpublish("whatsapp-mcp")
     assert export_all(repo, tmp_path) == 0 and not (tmp_path / "agents/whatsapp-mcp.json").exists()
+
+
+def test_lenient_parse_keeps_good_items_and_drops_malformed():
+    from botshub_agent.enrich.grounding import parse_lenient
+    raw = json.dumps({"name": ev("WhatsApp MCP by TimelinesAI", value="WhatsApp MCP by TimelinesAI"),
+                      "target_audience": ["Developers"],  # bare string: malformed
+                      "features": [ev("Assign chats to team members", name="Assign", description=""), "oops"]})
+    ex = parse_lenient(raw)
+    assert ex.name and len(ex.features) == 1 and ex.target_audience == []

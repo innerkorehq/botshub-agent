@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import parse_qs, urljoin, urlsplit
 
 import httpx
 from aaa.tools.builtin.net import FetchBlocked, SafeFetcher
@@ -50,14 +50,23 @@ def candidates_from_markdown(md: str, base: str) -> list[dict]:
     return [o for o in out if not SKIP.search(o["url"]) or "youtube" in o["url"]]
 
 
+def unwrap(url: str) -> str:
+    """Next.js/Vercel image proxies (/_next/image?url=<real>&w=..) -> the underlying asset, so variants dedupe."""
+    q = parse_qs(urlsplit(url).query)
+    if "/_next/image" in url and q.get("url"):
+        return urljoin(url, q["url"][0])
+    return url
+
+
 def pick(cands: list[dict], limit: int = 8) -> list[dict]:
     seen, out = set(), []
     for c in sorted(cands, key=lambda c: (c["kind"] != "video", c["rank"])):
-        u = c["url"].split("#")[0]
-        if u in seen or urlsplit(u).scheme != "https":
+        u = unwrap(c["url"]).split("#")[0]
+        key = u.rsplit("-", 1)[0] if re.search(r"-[0-9a-f]{6,}\.\w+$", u) else u  # hashed build variants of one asset
+        if key in seen or urlsplit(u).scheme != "https":
             continue
-        seen.add(u)
-        out.append(c)
+        seen.add(key)
+        out.append(c | {"url": c["url"]})
     return out[:limit]
 
 

@@ -37,7 +37,7 @@ class Runtime:
 
 def llm_config(s: Settings, model: str | None = None) -> LLMConfig:
     return LLMConfig(model=model or s.llm_model, base_url=s.llm_base_url, api_key=s.llm_api_key or None,
-                     price_in_per_mtok=s.price_in_per_mtok, price_out_per_mtok=s.price_out_per_mtok, timeout_s=120)
+                     params=s.llm_params, price_in_per_mtok=s.price_in_per_mtok, price_out_per_mtok=s.price_out_per_mtok, timeout_s=120)
 
 
 def build_registry(repo: Repo, s: Settings, fetcher: RawFetcher) -> ToolRegistry:

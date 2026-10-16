@@ -13,7 +13,7 @@ from botshub_agent.enrich import assemble, media as media_mod
 from botshub_agent.enrich import overview as ov
 from botshub_agent.enrich import gapfill, pricevote
 from botshub_agent.enrich.extract import build_prompt, guess_links
-from botshub_agent.enrich.grounding import canonicalize_sources, ground, parse_extraction
+from botshub_agent.enrich.grounding import canonicalize_sources, ground, parse_lenient
 from botshub_agent.models import Extraction
 from botshub_agent.tools.fetch_html import extract_links
 
@@ -61,7 +61,7 @@ async def collect_media(rt, cid: int) -> list[dict]:
             cands += media_mod.candidates_from_html(p["html"], p["url"])
         elif p["kind"] == "readme":
             cands += media_mod.candidates_from_markdown(p["text"], p["url"])
-        elif p["kind"] in ("features", "page") and p.get("html"):
+        elif p["kind"] == "features" and p.get("html"):  # not docs/blog pages: their images are off-topic
             cands += media_mod.candidates_from_html(p["html"], p["url"])
     return await media_mod.validate(media_mod.pick(cands, 12), rt.fetcher)
 
@@ -71,7 +71,7 @@ def _salvage(raw: str | None, pages: dict[str, str]) -> Extraction:
     if not raw:
         return Extraction()
     try:
-        return canonicalize_sources(ground(parse_extraction(raw), pages)[0], pages)
+        return canonicalize_sources(ground(parse_lenient(raw), pages)[0], pages)
     except Exception:
         return Extraction()
 

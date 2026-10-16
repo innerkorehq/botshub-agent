@@ -123,6 +123,35 @@ def parse_extraction(candidate: str) -> Extraction:
     return Extraction.model_validate(json.loads(s))
 
 
+def parse_lenient(candidate: str) -> Extraction:
+    """Salvage path: validate field by field and item by item, dropping whatever is malformed
+    (e.g. a bare string where an evidence object was required) instead of discarding the whole answer."""
+    s = candidate.strip()
+    if s.startswith("```"):
+        s = re.sub(r"^```\w*\n?|```$", "", s).strip()
+    raw = json.loads(s)
+    out: dict = {}
+    for name, field in Extraction.model_fields.items():
+        if name not in raw or raw[name] is None:
+            continue
+        if isinstance(raw[name], list):
+            ok = []
+            for item in raw[name]:
+                try:
+                    Extraction.model_validate({name: [item]})
+                    ok.append(item)
+                except ValidationError:
+                    pass
+            out[name] = ok
+        else:
+            try:
+                Extraction.model_validate({name: raw[name]})
+                out[name] = raw[name]
+            except ValidationError:
+                pass
+    return Extraction.model_validate(out)
+
+
 def make_validator(get_pages):
     """get_pages(context) -> {url: text}. Registered on ValidationHandler as 'facts'."""
 
