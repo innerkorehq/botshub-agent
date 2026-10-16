@@ -52,3 +52,7 @@ the OpenAI-compatible gateway. Local models cannot do tool calling, so keep the 
 - **No semantic merge seen in practice.** The sqlite-vec tie-break is deliberately conservative (cosine, name match and repo-vs-site pair); it merged nothing in the first run.
 - **Prompt-injection defence** is line filtering, data-only prompting, grounding and own-site-only research tools. AAA `tool_result` guardrails are not used because page text is not returned through tools (the gap-filler preview is filtered).
 - **Auto-publish has no human review.** Audit a random sample and keep `unpublish` handy.
+
+## License
+
+MIT, see [LICENSE](LICENSE). Built on [AAA](https://github.com/innerkorehq/AutonomousAgentArchitecture) (also MIT).

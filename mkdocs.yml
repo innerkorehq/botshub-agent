@@ -4,7 +4,7 @@ site_url: https://innerkorehq.github.io/botshub-agent/
 repo_url: https://github.com/innerkorehq/botshub-agent
 repo_name: innerkorehq/botshub-agent
 edit_uri: edit/master/docs/
-copyright: Copyright &copy; 2026 Innerkore Technologies &middot; Built on <a href="https://innerkorehq.github.io/AutonomousAgentArchitecture/">AAA</a>
+copyright: Copyright &copy; 2026 Innerkore Technologies &middot; MIT License &middot; Built on <a href="https://innerkorehq.github.io/AutonomousAgentArchitecture/">AAA</a>
 
 theme:
   name: material

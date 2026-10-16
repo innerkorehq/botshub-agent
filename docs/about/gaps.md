@@ -23,3 +23,7 @@ BotsHub Agent is **alpha**, built on [AAA](https://innerkorehq.github.io/Autonom
 ## Related
 
 - [AAA documentation](https://innerkorehq.github.io/AutonomousAgentArchitecture/) · [AAA on GitHub](https://github.com/innerkorehq/AutonomousAgentArchitecture) · [AAA status and limitations](https://innerkorehq.github.io/AutonomousAgentArchitecture/about/limitations/)
+
+## License
+
+MIT. See [LICENSE](https://github.com/innerkorehq/botshub-agent/blob/master/LICENSE).
