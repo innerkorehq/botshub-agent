@@ -61,7 +61,7 @@ def make_llm(price_answer="$35/month"):
 
 
 async def run(tmp_path, price_answer):
-    s = Settings(data_dir=tmp_path, min_features=3, min_quality=0.5)
+    s = Settings(data_dir=tmp_path, min_features=3, min_quality=0.5, screenshots=0, find_videos=False)
     fetcher = RawFetcher(FetchPolicy(), resolver=resolver, transport=httpx.MockTransport(web))
     llm, calls = make_llm(price_answer)
     async with runtime(s, llm_client=FakeLLMClient(llm), fetcher=fetcher) as rt:

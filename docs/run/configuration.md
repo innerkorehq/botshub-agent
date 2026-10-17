@@ -17,6 +17,8 @@ Empty values count as unset.
 | `BOTSHUB_PRICE_IN` / `_OUT` | | $ per million tokens, required for cost caps |
 | `BOTSHUB_RUN_MAX_COST` | | per-run cost cap |
 | `BOTSHUB_PRICE_VOTES` | `3` | samples per price vote |
+| `BOTSHUB_SCREENSHOTS` | `3` | pages to screenshot per listing (homepage, pricing, features); `0` disables |
+| `BOTSHUB_FIND_VIDEOS` | `1` | search for demo videos when the product's pages have fewer than two |
 | `BOTSHUB_SEARXNG_URL` | `http://localhost:8888` | SearXNG with `json` enabled |
 | `GITHUB_TOKEN` | | raises GitHub API rate limits |
 | `BOTSHUB_SCORE_THRESHOLD` | `40` | minimum score to enrich |

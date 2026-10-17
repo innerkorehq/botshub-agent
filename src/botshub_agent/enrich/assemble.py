@@ -80,7 +80,8 @@ def build_listing(cand: dict, slug: str, ex: Extraction, overview_text: str, med
             "deployment": [d.value for d in ex.deployment],
             "target_audience": [d.value for d in ex.target_audience],
         },
-        "media": [{"kind": m["kind"], "url": m["url"], "caption": m.get("caption", ""), "source_url": m["source_url"]} for m in media],
+        "media": [{"kind": m["kind"], "url": m["url"], "caption": m.get("caption", ""), "source_url": m["source_url"],
+                   **({"file": m["file"]} if m.get("file") else {})} for m in media],
         "sources": sorted({r["source_url"] for r in flat_facts(ex)}),
     }
 

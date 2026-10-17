@@ -15,6 +15,7 @@ uv run botshub discover               # collect signals, score, classify
 uv run botshub status                 # ranked candidates
 uv run botshub enrich --limit 5       # fetch, extract, gate, publish -> ./out/agents/<slug>.json
 uv run botshub enrich --id 12         # one candidate (forces re-extraction)
+uv run botshub media                 # backfill videos/screenshots/images for published listings (no LLM)
 uv run botshub refresh                # re-check published listings older than BOTSHUB_REFRESH_DAYS
 uv run botshub unpublish <slug>       # kill switch
 uv run botshub serve --hours 24       # daily loop
@@ -48,7 +49,7 @@ the OpenAI-compatible gateway. Local models cannot do tool calling, so keep the 
 - **Weak-signal facts.** Integrations can come from "works with X" prompts, "free trial" from a one-time credit, and plan names from table text, so listings can read slightly off. Pricing binds a plan to a price by proximity on the page plus a 3-way vote, not by a single quote.
 - **Local models are limited.** MLX models (critic, embeddings) cannot do tool calling; the main model must stay on the gateway. The 2B Gemma critic is a soft check; the code-level citation check is the real gate.
 - **Reasoning models need config.** `gpt-6-luna` rejects `temperature=0` and tool calls unless `BOTSHUB_LLM_PARAMS=reasoning_effort=none`.
-- **No headless-browser screenshots.** JS-only sites yield thin pages and get held; media is limited to images and videos found in HTML or README.
+- **Screenshots are viewport captures of a few pages.** They need Playwright plus a Chromium or system Chrome; sites that block headless browsers or gate content behind logins yield thin captures. Videos found by search are matched by title/channel name only, so an unusual product name can still pick a tangential video.
 - **No semantic merge seen in practice.** The sqlite-vec tie-break is deliberately conservative (cosine, name match and repo-vs-site pair); it merged nothing in the first run.
 - **Prompt-injection defence** is line filtering, data-only prompting, grounding and own-site-only research tools. AAA `tool_result` guardrails are not used because page text is not returned through tools (the gap-filler preview is filtered).
 - **Auto-publish has no human review.** Audit a random sample and keep `unpublish` handy.

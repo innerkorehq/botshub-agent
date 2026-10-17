@@ -31,6 +31,8 @@ class Algos:
     fetch_page: WorkflowGraph
     github_readme: WorkflowGraph
     count_mentions: WorkflowGraph
+    capture: WorkflowGraph
+    videos: WorkflowGraph
     classify: GenerateTestRepair
     vote: SelfConsistency
     extract: GenerateTestRepair
@@ -39,7 +41,7 @@ class Algos:
     price_vote: SelfConsistency
 
     def all(self) -> list:
-        return [self.discovery, self.fetch_page, self.github_readme, self.count_mentions,
+        return [self.discovery, self.fetch_page, self.github_readme, self.count_mentions, self.capture, self.videos,
                 self.classify, self.vote, self.extract, self.overview, self.gapfill, self.price_vote]
 
 
@@ -49,6 +51,8 @@ def make_algos(s: Settings, registry) -> Algos:
         fetch_page=_one("fetch_page", "bh_fetch_page"),
         github_readme=_one("github_readme", "bh_github_readme"),
         count_mentions=_one("count_mentions", "bh_count_mentions"),
+        capture=_one("capture_screenshot", "bh_capture"),
+        videos=_one("find_product_videos", "bh_find_videos"),
         classify=_named(classify.classify_algo(s.llm_model), "bh_classify"),
         vote=_named(classify.vote_algo(s.llm_model), "bh_classify_vote"),
         extract=_named(extract.extraction_algo(s.llm_model), "bh_extract"),

@@ -242,6 +242,21 @@ class Repo:
             )
             return aid
 
+    def update_media(self, agent_id: int, listing: dict, media: list[dict]) -> None:
+        """Replace only the media of a listing (no re-extraction), keeping a version for the diff."""
+        t = now()
+        with self.conn() as c:
+            old = c.execute("SELECT listing FROM agents WHERE id=?", (agent_id,)).fetchone()
+            payload = json.dumps(listing, ensure_ascii=False, sort_keys=True)
+            if old and old["listing"] != payload:
+                c.execute("INSERT INTO listing_versions (agent_id,listing,at) VALUES (?,?,?)", (agent_id, old["listing"], t))
+            c.execute("UPDATE agents SET listing=?, updated_at=? WHERE id=?", (payload, t, agent_id))
+            c.execute("DELETE FROM media WHERE agent_id=?", (agent_id,))
+            c.executemany(
+                "INSERT OR IGNORE INTO media (agent_id,kind,url,source_url,caption) VALUES (?,?,?,?,?)",
+                [(agent_id, m["kind"], m["url"], m["source_url"], m.get("caption", "")) for m in media],
+            )
+
     def log_decision(self, cid: int, decision: str, reasons: list[str], quality: float) -> None:
         with self.conn() as c:
             c.execute(

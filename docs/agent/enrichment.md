@@ -49,11 +49,23 @@ The only generated prose. A generator sees **only the numbered, validated facts*
 A second model (`GeneratorCritic`) fact-checks it, then plain code verifies that each sentence cites existing facts and that every number
 appears in the cited facts. If anything fails, the fallback is the verbatim description fact. Nothing is ever shown that was not checked.
 
-## 7. Media
+## 7. Media: videos, screenshots, images
 
-Collected by code, not the model: `og:image`, README and page images, YouTube/Vimeo embeds. Logos, icons, badges and tracking pixels are filtered;
-image variants (e.g. Next.js `/_next/image?url=`) are collapsed; images are validated with a `HEAD` request through the fetcher's SSRF vetting
-(real image type, minimum size). References are stored with their source page; nothing is mirrored by default.
+Collected by code, never by the model, in this order of preference:
+
+1. **Videos.** YouTube/Vimeo/Loom embeds and links found on the product's own pages and README, plus `.mp4`/`.webm` files. If fewer than two are found,
+   a SearXNG video search proposes more, and each result is **proved relevant** through YouTube's oEmbed endpoint: the product name must appear in the
+   video title or channel name (names made only of generic words such as "AI Agent" never match).
+2. **Screenshots we capture ourselves.** A headless browser (Playwright; bundled Chromium, falling back to system Chrome) renders the product's homepage,
+   pricing and features pages at 1440×900 and saves JPEGs. Cookie and chat overlays are hidden by CSS, and blank captures (< 20 KB) are discarded.
+   For a repo-only candidate the GitHub page is captured. Every request the browser makes (page, redirects, scripts, images) is vetted with the same SSRF rules
+   as the fetcher, so a hostile page cannot use the browser to reach private addresses.
+3. **Page images.** `<img>` tags and README images, with logos, icons, badges, sponsors, testimonials, star-history charts, QR codes and comparison/social cards
+   filtered out. Next.js image-proxy variants collapse to one asset, and each remaining image is checked with a `HEAD` request (real image, minimum size). The
+   `og:image` social card is the last resort.
+
+Screenshots are written to `data/media/<candidate>/` and copied next to the exported JSON as `out/media/<slug>/…`; videos and images are stored as references
+with their source page. Backfill existing listings, with no LLM calls, using `botshub media`.
 
 ## 8. Publish gate
 

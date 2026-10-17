@@ -43,8 +43,12 @@ def llm_config(s: Settings, model: str | None = None) -> LLMConfig:
 def build_registry(repo: Repo, s: Settings, fetcher: RawFetcher) -> ToolRegistry:
     searx = SearXNGSearch(s.searxng_url)
     from botshub_agent.tools.research import make_research_tools
+    from botshub_agent.tools.screenshot import make_screenshot_tool
+    from botshub_agent.tools.videos import make_video_tool
     return ToolRegistry([
         *make_research_tools(repo, fetcher, searx),
+        make_screenshot_tool(fetcher, s.media_dir),
+        make_video_tool(SearXNGSearch(s.searxng_url, categories="videos")),
         github_tool(s.github_token), hn_tool(), searxng_tool(searx), corroboration_tool(searx),
         make_fetch_tool(repo, fetcher), make_github_readme_tool(repo, s.github_token),
         _ingest_tool(repo, s),
@@ -86,7 +90,7 @@ async def runtime(s: Settings | None = None, llm_client=None, fetcher: RawFetche
         client = RoutingClient(client, LocalClient(), s.local_prefixes)
     async with Engine(store=store) as engine:
         LLMHandler(client).attach(engine)
-        ToolHandler(registry, pools={"default": 16, "github": 2, "hn": 2, "searxng": 2, "fetch": 6, "db": 1}).attach(engine)
+        ToolHandler(registry, pools={"default": 16, "github": 2, "hn": 2, "searxng": 2, "fetch": 6, "db": 1, "browser": 2}).attach(engine)
         ValidationHandler({"facts": make_validator(pages_for), "classify": classify_validator,
                            "default": json_validator(Classification)}).attach(engine)
         try:

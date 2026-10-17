@@ -45,7 +45,7 @@ async def test_discovery_scores_and_classifies(tmp_path, monkeypatch):
     mock = httpx.MockTransport(api)
     monkeypatch.setattr(rt_mod, "github_tool", functools.partial(sources.github_tool, transport=mock))
     monkeypatch.setattr(rt_mod, "hn_tool", functools.partial(sources.hn_tool, transport=mock))
-    monkeypatch.setattr(rt_mod, "SearXNGSearch", lambda url: SearXNGSearch(url, transport=mock))
+    monkeypatch.setattr(rt_mod, "SearXNGSearch", lambda url, **kw: SearXNGSearch(url, transport=mock, **kw))
     s = Settings(data_dir=tmp_path, score_threshold=0.0)
     async with rt_mod.runtime(s, llm_client=FakeLLMClient(llm)) as rt:
         stats = await run_discovery(rt)

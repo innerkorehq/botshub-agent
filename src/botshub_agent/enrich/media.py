@@ -9,7 +9,9 @@ import httpx
 from aaa.tools.builtin.net import FetchBlocked, SafeFetcher
 from bs4 import BeautifulSoup
 
-SKIP = re.compile(r"(logo|icon|avatar|sprite|pixel|badge|favicon|spinner|emoji|shields\.io|\.svg(\?|$)|gravatar|1x1|tracking)", re.I)
+SKIP = re.compile(r"(logo|icon|avatar|sprite|pixel|badge|favicon|spinner|emoji|shields\.io|\.svg(\?|$)|gravatar|1x1|tracking|"
+                  r"sponsor|testimonial|star-history|contributor|qr[-_.]|wechat|partner|customer|trusted|compar|/vs[-_/]|-vs-|"
+                  r"opengraph-image|twitter-image|social[-_/]?(card|preview|poster)|og-image|/og[./?_-])", re.I)
 VIDEO_HOSTS = ("youtube.com/embed/", "youtube-nocookie.com/embed/", "player.vimeo.com/video/", "loom.com/embed/")
 MD_IMG = re.compile(r"!\[([^\]]*)\]\((\S+?)(?:\s+\"[^\"]*\")?\)")
 HTML_IMG = re.compile(r"<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>", re.I)
@@ -22,13 +24,18 @@ def candidates_from_html(html: str, base: str) -> list[dict]:
     for prop in ("og:image", "twitter:image"):
         for m in soup.find_all("meta", attrs={"property": prop}) + soup.find_all("meta", attrs={"name": prop}):
             if m.get("content"):
-                out.append({"kind": "image", "url": urljoin(base, m["content"]), "source_url": base, "caption": "", "rank": 0})
+                out.append({"kind": "image", "url": urljoin(base, m["content"]), "source_url": base, "caption": "", "rank": 50})
     for i, img in enumerate(soup.find_all("img", src=True)):
         url = urljoin(base, img["src"])
         w = int(re.sub(r"\D", "", str(img.get("width") or "0")) or 0)
         if SKIP.search(url) or SKIP.search(" ".join(img.get("class") or [])) or (0 < w < 200):
             continue
         out.append({"kind": "image", "url": url, "source_url": base, "caption": (img.get("alt") or "")[:120], "rank": 1 + i})
+    for a in soup.find_all("a", href=True):
+        href = urljoin(base, a["href"])
+        m = re.match(r"https?://(?:www\.)?(?:youtube\.com/watch\?v=|youtu\.be/)([\w-]{6,})", href)
+        if m:
+            out.append({"kind": "video", "url": f"https://www.youtube.com/embed/{m.group(1)}", "source_url": base, "caption": re.sub(r"\s*\(opens in a new tab\)", "", a.get_text(" ", strip=True))[:100], "rank": 0})
     for fr in soup.find_all(["iframe", "video", "source"]):
         src = urljoin(base, fr.get("src") or "")
         if any(h in src for h in VIDEO_HOSTS) or MP4.fullmatch(src or ""):

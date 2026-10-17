@@ -61,7 +61,7 @@ async def resolver(host, port):
 
 
 async def test_enrich_publishes_only_grounded_facts(tmp_path):
-    s = Settings(data_dir=tmp_path, min_features=3, min_quality=0.5)
+    s = Settings(data_dir=tmp_path, min_features=3, min_quality=0.5, screenshots=0, find_videos=False)
     fetcher = RawFetcher(FetchPolicy(), resolver=resolver, transport=httpx.MockTransport(web))
     async with runtime(s, llm_client=FakeLLMClient(llm), fetcher=fetcher) as rt:
         ingest_signals(rt.repo, [[{"source": "searxng", "url": "https://zorbo.ai", "name": "Zorbo", "metrics": {}}]])
@@ -91,7 +91,7 @@ async def test_weaker_rerun_never_replaces_a_published_listing(tmp_path):
     def flaky(req):
         return text("not json at all") if mode["broken"] else llm(req)
 
-    s = Settings(data_dir=tmp_path, min_features=3, min_quality=0.5)
+    s = Settings(data_dir=tmp_path, min_features=3, min_quality=0.5, screenshots=0, find_videos=False)
     fetcher = RawFetcher(FetchPolicy(), resolver=resolver, transport=httpx.MockTransport(web))
     async with runtime(s, llm_client=FakeLLMClient(flaky), fetcher=fetcher) as rt:
         ingest_signals(rt.repo, [[{"source": "searxng", "url": "https://zorbo.ai", "name": "Zorbo", "metrics": {}}]])

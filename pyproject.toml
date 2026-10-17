@@ -38,6 +38,9 @@ local = [
 docs = [
     "mkdocs-material>=9.7.7",
 ]
+screenshots = [
+    "playwright>=1.64.0",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

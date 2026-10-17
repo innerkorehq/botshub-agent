@@ -47,6 +47,8 @@ class Settings:
     llm_params: dict = field(
         default_factory=lambda: _params("BOTSHUB_LLM_PARAMS")
     )  # default request params, e.g. reasoning_effort=none
+    screenshots: int = _i("BOTSHUB_SCREENSHOTS", 3)  # pages to screenshot per listing; 0 disables
+    find_videos: bool = bool(_i("BOTSHUB_FIND_VIDEOS", 1))
     critic_model: str = os.environ.get("BOTSHUB_CRITIC_MODEL", "")  # empty = same model
     price_in_per_mtok: float | None = (
         _f("BOTSHUB_PRICE_IN", 0) or None
@@ -73,6 +75,10 @@ class Settings:
     weights: dict[str, float] = field(
         default_factory=lambda: {"pop": 0.30, "vel": 0.35, "hn": 0.15, "mentions": 0.20}
     )
+
+    @property
+    def media_dir(self) -> Path:
+        return self.data_dir / "media"
 
     @property
     def botshub_db(self) -> Path:

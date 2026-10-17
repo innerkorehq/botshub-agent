@@ -54,16 +54,40 @@ async def fetch_sources(rt, c: dict) -> None:
         await _gather(rt, a.fetch_page, links)
 
 
-async def collect_media(rt, cid: int) -> list[dict]:
+async def collect_media(rt, c: dict) -> list[dict]:
+    """Videos first, then real screenshots we capture ourselves, then product images found in the HTML/README."""
+    s, cid, a = rt.settings, c["id"], rt.algos
+    pages = rt.repo.pages(cid)
     cands: list[dict] = []
-    for p in rt.repo.pages(cid):
+    for p in pages:
         if p["kind"] == "homepage" and p.get("html"):
             cands += media_mod.candidates_from_html(p["html"], p["url"])
         elif p["kind"] == "readme":
             cands += media_mod.candidates_from_markdown(p["text"], p["url"])
         elif p["kind"] == "features" and p.get("html"):  # not docs/blog pages: their images are off-topic
             cands += media_mod.candidates_from_html(p["html"], p["url"])
-    return await media_mod.validate(media_mod.pick(cands, 12), rt.fetcher)
+    found = await media_mod.validate(media_mod.pick(cands, 14), rt.fetcher, limit=10)
+    videos = [m for m in found if m["kind"] == "video"][:3]
+    images = [m for m in found if m["kind"] == "image"][:4]
+
+    shots: list[dict] = []
+    if s.screenshots > 0:
+        by_kind = {p["kind"]: p["url"] for p in pages}
+        targets = [(k, by_kind[k]) for k in ("homepage", "pricing", "features") if k in by_kind]
+        if not targets and c["key"].startswith("gh:"):
+            targets = [("repo", f"https://github.com/{c['key'][3:]}")]
+        results = await _gather(rt, a.capture, [{"candidate_id": cid, "url": u, "name": k} for k, u in targets[: s.screenshots]])
+        for (k, u), r in zip(targets, results):
+            if r:
+                shots.append({"kind": "screenshot", "url": "", "file": r["file"], "source_url": u,
+                              "caption": f"{k.capitalize()} page" + (f": {r['title']}" if r.get("title") else "")})
+
+    if s.find_videos and len(videos) < 2:
+        res = (await _gather(rt, a.videos, [{"name": c["name"]}]))[0] or []
+        have = {v["url"] for v in videos}
+        videos += [{"kind": "video", "url": v["url"], "source_url": v["source_url"], "caption": v["title"]}
+                   for v in res if v["url"] not in have][: 2 - len(videos)]
+    return videos[:3] + shots + images
 
 
 def _salvage(raw: str | None, pages: dict[str, str]) -> Extraction:
@@ -142,11 +166,14 @@ async def enrich_candidate(rt, cid: int, force: bool = False) -> dict:
     elif facts:
         overview_text = ov.template_overview(facts)
 
-    media = await collect_media(rt, cid)
+    media = await collect_media(rt, c)
     name = ex.name.value if ex.name else c["name"]
     slug = assemble.slugify(name)
     if repo.slug_taken(slug, cid):
         slug = f"{slug}-{cid}"
+    for m in media:  # screenshots live next to the listing in the export: media/<slug>/<file>
+        if m.get("file"):
+            m["url"] = f"media/{slug}/{m['file'].split('/')[-1]}"
     listing = assemble.build_listing(c, slug, ex, overview_text, media, ex.category or c.get("category"))
     decision, reasons, q = assemble.decide(listing, s.min_features, s.min_quality)
     if decision == "held" and existing and existing["status"] == "published":
@@ -158,6 +185,23 @@ async def enrich_candidate(rt, cid: int, force: bool = False) -> dict:
     repo.log_decision(cid, decision, reasons + notes, q)
     repo.set_candidate(cid, status=decision, last_enriched=_now())
     return {"candidate": cid, "slug": slug, "decision": decision, "reasons": reasons, "quality": q}
+
+
+async def refresh_media(rt, cid: int) -> dict:
+    """Re-collect videos, screenshots and images for a published listing. No extraction, no LLM calls."""
+    c, agent = rt.repo.candidate(cid), rt.repo.agent_by_candidate(cid)
+    if not c or not agent or agent["status"] != "published":
+        return {"candidate": cid, "decision": "skipped"}
+    media = await collect_media(rt, c)
+    for m in media:
+        if m.get("file"):
+            m["url"] = f"media/{agent['slug']}/{m['file'].split('/')[-1]}"
+    listing = json.loads(agent["listing"])
+    listing["media"] = [{"kind": m["kind"], "url": m["url"], "caption": m.get("caption", ""), "source_url": m["source_url"],
+                         **({"file": m["file"]} if m.get("file") else {})} for m in media]
+    rt.repo.update_media(agent["id"], listing, media)
+    kinds = [m["kind"] for m in media]
+    return {"candidate": cid, "slug": agent["slug"], **{k: kinds.count(k) for k in ("video", "screenshot", "image")}}
 
 
 def _now() -> str:

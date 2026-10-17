@@ -5,7 +5,7 @@ Requirements: Python 3.12+, [`uv`](https://docs.astral.sh/uv/), an OpenAI-compat
 ```bash
 git clone https://github.com/innerkorehq/botshub-agent
 cd botshub-agent
-uv sync                                  # add --extra local for MLX models, --extra docs to build this site
+uv sync --extra screenshots              # screenshots need playwright; add --extra local for MLX models, --extra docs for this site
 cp .env.example .env                     # then edit: gateway URL, key, model
 ```
 
@@ -14,6 +14,11 @@ Load the environment (the CLI reads plain environment variables):
 ```bash
 set -a && . ./.env && set +a
 ```
+
+## Screenshots
+
+Screenshots use a headless browser. Either let Playwright download its Chromium (`uv run playwright install chromium`) or rely on an installed Google Chrome,
+which the tool falls back to automatically. Without either, listings still get videos and images; set `BOTSHUB_SCREENSHOTS=0` to skip the attempt.
 
 ## SearXNG (recommended)
 
@@ -30,6 +35,7 @@ uv run botshub discover                  # collect, score, merge, classify
 uv run botshub status                    # ranked candidates with ids
 uv run botshub enrich --limit 3          # top 3 classified candidates
 uv run botshub enrich --id 12            # one specific candidate (re-extracts)
+uv run botshub media                     # (re)collect videos/screenshots/images for published listings, no LLM calls
 uv run botshub refresh                   # re-check published listings older than BOTSHUB_REFRESH_DAYS
 uv run botshub export                    # (re)write ./out/agents/*.json
 uv run botshub unpublish <slug>          # kill switch
